@@ -1,0 +1,18 @@
+<component name="libraryTable">
+  <library name="openjdk.jmh.samples" type="repository">
+    <properties maven-id="org.openjdk.jmh:jmh-samples:1.9.1" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/jmh-samples-1.9.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jmh-core-1.9.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jopt-simple-4.6.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/commons-math3-3.2.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/lib/jmh-samples-1.9.1-javadoc.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jmh-core-1.9.1-javadoc.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jopt-simple-4.6-javadoc.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/commons-math3-3.2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES />
+  </library>
+</component>

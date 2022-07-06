@@ -1,0 +1,12 @@
+--- # init
+input:
+  source_1: /local_library.xml
+  source_2: /internet_library.xml
+
+output: /output.txt
+
+keys:
+  -
+    element: true
+    attributes:
+      - id: true
