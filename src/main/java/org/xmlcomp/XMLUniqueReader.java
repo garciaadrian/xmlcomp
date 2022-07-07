@@ -15,6 +15,7 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.traversal.DocumentTraversal;
 import org.w3c.dom.traversal.NodeFilter;
 import org.w3c.dom.traversal.NodeIterator;
+import org.w3c.dom.traversal.TreeWalker;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -43,12 +44,7 @@ public class XMLUniqueReader implements XMLDiffGenerator {
 
         for (Node node = it.nextNode(); node != null; node = it.nextNode()) {
             if (node.getNodeType() == Node.ELEMENT_NODE) {
-                NamedNodeMap attributes = node.getAttributes();
-                String nodeId = attributes.getNamedItem("id").getNodeValue();
-                String nodeName = node.getNodeName();
-                String uniqueId = nodeId.concat(nodeName);
-                hashedNodes.put(uniqueId, node);
-                nodes.add(node);
+                nodes.add(new ENode(node, null));
             }
         }
     }
@@ -88,6 +84,14 @@ public class XMLUniqueReader implements XMLDiffGenerator {
         return getNodeXPath(node.getParentNode()) + "/" + node.getNodeName();
     }
 
+    public static String getNodeXPath(ENode node) {
+        if (node.getxPath() != null)
+            return node.getxPath();
+        else
+            node.setxPath(getNodeXPath(node.getNode()));
+        return node.getxPath();
+    }
+
     private boolean isCollaped() {
         return !nodes.isEmpty();
     }
@@ -97,8 +101,8 @@ public class XMLUniqueReader implements XMLDiffGenerator {
     }
 
     public boolean containsNode(Node node, String xPath) {
-        for (Node n : nodes) {
-            if (n.isEqualNode(node)) {
+        for (ENode n : nodes) {
+            if (n.getNode().isEqualNode(node)) {
                 return true;
             }
         }
@@ -106,9 +110,9 @@ public class XMLUniqueReader implements XMLDiffGenerator {
     }
 
     public Node findNode(String element) {
-        for (Node node : nodes) {
-            if (node.getNodeName().equals(element)) {
-                return node;
+        for (ENode node : nodes) {
+            if (node.getNode().getNodeName().equals(element)) {
+                return node.getNode();
             }
         }
 
@@ -118,11 +122,12 @@ public class XMLUniqueReader implements XMLDiffGenerator {
 
     public void diff(XMLUniqueReader doc2) {
         ArrayList<Node> matches = new ArrayList<>();
-        for (Node node : nodes) {
-            Node n = doc2.findNode(getNodeXPath(node), node);
+        for (ENode node : nodes) {
+            int size = matches.size();
+            Node n = doc2.findNode(getNodeXPath(node), node.getNode());
             if (n == null) {
                 System.out.println(" <<< MISMATCH <<<");
-                System.out.println(nodeToString(node));
+                System.out.println(nodeToString(node.getNode()));
             } else {
                 matches.add(n);
             }
@@ -131,16 +136,16 @@ public class XMLUniqueReader implements XMLDiffGenerator {
     }
 
     public Node findNode(String element, String key, String val) {
-        for (Node node : nodes) {
-            if (node.getNodeName().equals(element)) {
-                NamedNodeMap attributes = node.getAttributes();
+        for (ENode node : nodes) {
+            if (node.getNode().getNodeName().equals(element)) {
+                NamedNodeMap attributes = node.getNode().getAttributes();
                 Node attrib = attributes.getNamedItem(key);
                 if (attrib == null) {
                     continue;
                 }
 
                 if (attrib.getNodeValue().equals(val)) {
-                    return node;
+                    return node.getNode();
                 }
             }
         }
@@ -149,14 +154,25 @@ public class XMLUniqueReader implements XMLDiffGenerator {
     }
 
     public Node findNode(String xPath, Node node) {
-        for (Node n: nodes) {
-            if (getNodeXPath(n).equals(xPath) && !isDiff(node, n)) {
+        ENode match = null;
+        int match_pos = -1;
+        int size = nodes.size();
+        for (int i = 0; i < nodes.size(); i++) {
+            ENode n = nodes.get(i);
+            if (getNodeXPath(n).equals(xPath) && !isDiff(node, n.getNode())) {
                 // found
-                return n;
+                match = n;
+                match_pos = i;
             }
         }
-
-        return null;
+        if (match_pos != -1) {
+            nodes.remove(match_pos);
+        }
+        if (match == null) {
+            return null;
+        } else {
+            return match.getNode();
+        }
     }
 
     public static boolean isAttribDiff(NamedNodeMap left, NamedNodeMap right) {
@@ -198,10 +214,15 @@ public class XMLUniqueReader implements XMLDiffGenerator {
         NamedNodeMap leftAttributes = left.getAttributes();
         NamedNodeMap rightAttributes = right.getAttributes();
 
+        String leftNodeVal = left.getTextContent();
+        String rightNodeVal = right.getTextContent();
+
         if (!isAttribDiff(leftAttributes, rightAttributes) &&
-        left.getNodeName().equals(right.getNodeName())) {
+        left.getNodeName().equals(right.getNodeName()) &&
+        java.util.Objects.equals(leftNodeVal, rightNodeVal)) {
             return false;
         }
+
         return true;
     }
 
@@ -238,6 +259,5 @@ public class XMLUniqueReader implements XMLDiffGenerator {
 
     InputStream _file = null;
     Document doc = null;
-    ArrayList<Node> nodes = new ArrayList<>();
-    HashMap<String, Node> hashedNodes = new HashMap<>();
+    ArrayList<ENode> nodes = new ArrayList<>();
 }

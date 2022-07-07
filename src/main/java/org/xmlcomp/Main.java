@@ -27,15 +27,12 @@ public class Main {
 
         System.out.println(config.getProperty("source_1"));
 
-        XMLUniqueReader local_xml = new XMLUniqueReader(Main.class.getResourceAsStream("/local_library.xml"));
+        XMLUniqueReader local_xml = new XMLUniqueReader(Main.class.getResourceAsStream("/uwm.xml"));
         local_xml.read();
 
-        XMLUniqueReader internet_xml = new XMLUniqueReader(Main.class.getResourceAsStream("/internet_library.xml"));
+        XMLUniqueReader internet_xml = new XMLUniqueReader(Main.class.getResourceAsStream("/uwm_new.xml"));
         internet_xml.read();
 
-        Node localRootNode = local_xml.findNode("library");
-        Node internetRootNode = internet_xml.findNode("library");
-        XMLUniqueReader.isAttribDiff(localRootNode.getAttributes(), internetRootNode.getAttributes());
         local_xml.diff(internet_xml);
 
     }
