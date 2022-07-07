@@ -35,7 +35,8 @@ public class Main {
 
         Node localRootNode = local_xml.findNode("library");
         Node internetRootNode = internet_xml.findNode("library");
-
+        XMLUniqueReader.isAttribDiff(localRootNode.getAttributes(), internetRootNode.getAttributes());
+        local_xml.diff(internet_xml);
 
     }
 }

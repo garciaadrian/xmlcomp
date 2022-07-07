@@ -20,22 +20,17 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.infra.Blackhole;
 
-/**
- * XML document parser which assumes that elements in a document
- * have a unique key as an attribute
- *
- * Uses hashmaps to match nodes between the documents
- */
 public class XMLUniqueReader implements XMLDiffGenerator {
     XMLUniqueReader(InputStream f) {
         _file = f;
@@ -58,11 +53,50 @@ public class XMLUniqueReader implements XMLDiffGenerator {
         }
     }
 
+    public static String nodeToString(Node node) {
+        try {
+            node.normalize();
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            XPathExpression expr = xPath.compile("//text()[normalize-space()='']");
+            NodeList nodeList = (NodeList) expr.evaluate(node, XPathConstants.NODESET);
+
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node nd = nodeList.item(i);
+                nd.getParentNode().removeChild(nd);
+            }
+
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+
+            StringWriter writer = new StringWriter();
+            transformer.transform(new DOMSource(node), new StreamResult(writer));
+            return writer.toString();
+        } catch (XPathExpressionException | TransformerException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String getNodeXPath(Node node) {
+        if (node.getNodeType() == Node.DOCUMENT_NODE) {
+            return "";
+        }
+
+        return getNodeXPath(node.getParentNode()) + "/" + node.getNodeName();
+    }
+
     private boolean isCollaped() {
         return !nodes.isEmpty();
     }
 
-    public boolean containsNode(Node node) {
+    static private boolean areNodeEqual(Node n1, Node n2) {
+        return true;
+    }
+
+    public boolean containsNode(Node node, String xPath) {
         for (Node n : nodes) {
             if (n.isEqualNode(node)) {
                 return true;
@@ -81,12 +115,17 @@ public class XMLUniqueReader implements XMLDiffGenerator {
         return null;
     }
 
-    public static void diffDocs(XMLUniqueReader leftDoc, XMLUniqueReader rightDoc) {
-
-    }
 
     public void diff(XMLUniqueReader doc2) {
+        ArrayList<Node> matches = new ArrayList<>();
         for (Node node : nodes) {
+            Node n = doc2.findNode(getNodeXPath(node), node);
+            if (n == null) {
+                System.out.println(" <<< MISMATCH <<<");
+                System.out.println(nodeToString(node));
+            } else {
+                matches.add(n);
+            }
 
         }
     }
@@ -109,29 +148,51 @@ public class XMLUniqueReader implements XMLDiffGenerator {
         return null;
     }
 
+    public Node findNode(String xPath, Node node) {
+        for (Node n: nodes) {
+            if (getNodeXPath(n).equals(xPath) && !isDiff(node, n)) {
+                // found
+                return n;
+            }
+        }
+
+        return null;
+    }
+
     public static boolean isAttribDiff(NamedNodeMap left, NamedNodeMap right) {
         if (left.getLength() != right.getLength()) {
             return true;
         }
 
-        for (int i = 0; i < left.getLength(); i++) {
-            Node leftAttrib = left.item(i);
-            /*
-             What if a node has two attribute nodes with the same name?
-             what will the DOM api return?
-            */
-            Node rightAttrib = right.getNamedItem(leftAttrib.getNodeName());
+        if (isAttribValueDiff(right, left)) return true;
 
-            if (rightAttrib == null) {
+        if (isAttribValueDiff(left, right)) return true;
+        return false;
+    }
+
+    /**
+     * Don't call this method directly. Call isAttribDiff instead which uses this method.
+     * @param left
+     * @param right
+     * @return
+     */
+    private static boolean isAttribValueDiff(NamedNodeMap left, NamedNodeMap right) {
+        for (int i = 0; i < right.getLength(); i++) {
+            Node rightAttrib = right.item(i);
+            Node leftAttrib = left.getNamedItem(rightAttrib.getNodeName());
+
+            if (leftAttrib == null) {
                 return true;
             }
 
-            if (!leftAttrib.getNodeValue().equals(rightAttrib.getNodeValue())) {
+            if (!rightAttrib.getNodeValue().equals(leftAttrib.getNodeValue())) {
                 return true;
             }
+
         }
         return false;
     }
+
     public static boolean isDiff(Node left, Node right) {
         // For now, let's assume the node 'right' is a root node
         NamedNodeMap leftAttributes = left.getAttributes();
