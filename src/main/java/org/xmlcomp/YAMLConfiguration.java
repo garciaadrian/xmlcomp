@@ -7,35 +7,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 public class YAMLConfiguration implements ConfigurationInterface{
-    static public class Key {
-        public String element;
-        public List<Map<String, String>> attributes;
-    }
-
-    private Map<String, String> input;
-    public String output;
+    private Map<String, String> sources;
     public ArrayList<Key> keys;
 
     @JsonAnyGetter
-    private Map<String, String> getInput() {
-        return input;
+    private Map<String, String> getSources() {
+        return sources;
     }
 
     @JsonAnySetter
-    private void setInput(Map<String, String> properties) {
-        this.input = properties;
-    }
-
-    public void setOutput(String output) {
-        this.output = output;
-    }
-
-    public String getOutput() {
-        return output;
+    private void setSources(Map<String, String> properties) {
+        this.sources = properties;
     }
 
     public String getProperty(String property) {
-        return input.getOrDefault(property, "");
+        return sources.getOrDefault(property, "");
     }
 
+    @Override
+    public ArrayList<Key> getKey() {
+        return keys;
+    }
 }

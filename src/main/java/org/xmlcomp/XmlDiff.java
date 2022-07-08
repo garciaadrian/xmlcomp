@@ -8,6 +8,6 @@
 
 package org.xmlcomp;
 
-public interface XMLDiffGenerator {
+public interface XmlDiff {
     public String getDiff();
 }

@@ -13,8 +13,8 @@ package org.xmlcomp;
  * A model that represents changes in a hierarchical structure only
  * using parent relationships
  */
-public class XMLTreeDiff implements XMLDiffGenerator {
-    private XMLTreeDiff() {};
+public class XmlTreeDiff implements XmlDiff {
+    private XmlTreeDiff() {};
 
     public static class XTree {
         String label;

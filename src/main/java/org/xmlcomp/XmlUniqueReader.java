@@ -15,7 +15,6 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.traversal.DocumentTraversal;
 import org.w3c.dom.traversal.NodeFilter;
 import org.w3c.dom.traversal.NodeIterator;
-import org.w3c.dom.traversal.TreeWalker;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -29,11 +28,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 
-public class XMLUniqueReader implements XMLDiffGenerator {
-    XMLUniqueReader(InputStream f) {
+public class XmlUniqueReader implements XmlDiff {
+    XmlUniqueReader(InputStream f) {
         _file = f;
     }
 
@@ -120,14 +118,17 @@ public class XMLUniqueReader implements XMLDiffGenerator {
     }
 
 
-    public void diff(XMLUniqueReader doc2) {
+    public void diff(XmlUniqueReader doc2) {
         ArrayList<Node> matches = new ArrayList<>();
+        long curr = 0;
         for (ENode node : nodes) {
             int size = matches.size();
+            curr = System.currentTimeMillis();
             Node n = doc2.findNode(getNodeXPath(node), node.getNode());
+            //System.out.println((System.currentTimeMillis() - curr) + "ms");
             if (n == null) {
                 System.out.println(" <<< MISMATCH <<<");
-                System.out.println(nodeToString(node.getNode()));
+                //System.out.println(nodeToString(node.getNode()));
             } else {
                 matches.add(n);
             }
@@ -209,13 +210,30 @@ public class XMLUniqueReader implements XMLDiffGenerator {
         return false;
     }
 
+    private static String getFirstLevelText(Node node) {
+        NodeList nodes = node.getChildNodes();
+        StringBuilder textContent = new StringBuilder();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node child = nodes.item(i);
+            if (child.getNodeType() == Node.TEXT_NODE) {
+                textContent.append(child.getTextContent());
+            }
+        }
+
+        return textContent.toString();
+    }
+
+    public static boolean isSiblingsDiff(Node left, Node right) {
+        return false;
+    }
+
     public static boolean isDiff(Node left, Node right) {
         // For now, let's assume the node 'right' is a root node
         NamedNodeMap leftAttributes = left.getAttributes();
         NamedNodeMap rightAttributes = right.getAttributes();
 
-        String leftNodeVal = left.getTextContent();
-        String rightNodeVal = right.getTextContent();
+        String leftNodeVal = getFirstLevelText(left);
+        String rightNodeVal = getFirstLevelText(right);
 
         if (!isAttribDiff(leftAttributes, rightAttributes) &&
         left.getNodeName().equals(right.getNodeName()) &&
