@@ -3,11 +3,14 @@ package org.xmlcomp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URL;
 
 public class Main {
+    private static final Logger logger = LogManager.getLogger();
     public static void main(String[] args) {
         ObjectMapper mapper = new YAMLMapper(new YAMLFactory());
 
@@ -18,21 +21,11 @@ public class Main {
         try {
             config = mapper.readValue(options, YAMLConfiguration.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.fatal("Could not open configuration file.");
             return;
         }
 
-        System.out.println(config.getProperty("firstSource"));
-
-        XmlUniqueReader local_xml = new XmlUniqueReader(Main.class.getResourceAsStream("/uwm.xml"));
-        local_xml.read();
-
-        XmlUniqueReader internet_xml = new XmlUniqueReader(Main.class.getResourceAsStream("/uwm_new.xml"));
-        internet_xml.read();
-
-        long curr = System.currentTimeMillis();
-        local_xml.diff(internet_xml);
-        System.out.println("DIFF BENCHMARK: " + (System.currentTimeMillis() - curr));
+        logger.debug(config.getProperty("firstSource"));
 
 
 

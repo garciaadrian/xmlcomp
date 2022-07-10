@@ -8,6 +8,24 @@
 
 package org.xmlcomp;
 
-public interface Parser {
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
+public interface Parser {
+    default InputStream open(String filename) throws FileNotFoundException {
+        InputStream file = null;
+        try {
+            file = new FileInputStream(filename);
+        } catch (FileNotFoundException | SecurityException e) {
+            e.printStackTrace();
+        }
+        return file;
+    }
+
+    default InputStream openResource(String resource) {
+        // #TODO(adrian): this func can fail be returning an empty stream
+        return Main.class.getResourceAsStream(resource);
+    }
 }
