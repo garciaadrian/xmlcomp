@@ -1,7 +1,7 @@
 --- # init
 sources:
-  firstSource: /local_library.xml
-  secondSource: /internet_library.xml
+  source: /local_library.xml
+  target: /internet_library.xml
   output: /output.txt
 
 keys:

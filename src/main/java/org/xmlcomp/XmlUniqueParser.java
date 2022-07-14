@@ -29,9 +29,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.*;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,7 +66,18 @@ public class XmlUniqueParser implements XmlParser {
         sourceDocNodeHashes = loadNodes(sourceDocument);
         targetDocNodeHashes = loadNodes(targetDocument);
         HashMap<String, Node> unmatchedNodes = findUnmatchedNodes();
-        getDiff(unmatchedNodes);
+    }
+
+    public XmlUniqueParser(String source, String target) {
+        sourceDocStream = new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8));
+        targetDocStream = new ByteArrayInputStream(target.getBytes(StandardCharsets.UTF_8));
+
+        sourceDocument = loadDocument(sourceDocStream);
+        targetDocument = loadDocument(targetDocStream);
+
+        sourceDocNodeHashes = loadNodes(sourceDocument);
+        targetDocNodeHashes = loadNodes(targetDocument);
+        HashMap<String, Node> unmatchedNodes = findUnmatchedNodes();
     }
 
     /**
@@ -166,10 +179,10 @@ public class XmlUniqueParser implements XmlParser {
     }
 
     /**
-     * Generates an XPath for a given node.
+     * Returns the xml representation of a node.
      *
      * @param node the node
-     * @return XPath
+     * @return xml
      */
     public static String nodeToString(Node node) {
         try {

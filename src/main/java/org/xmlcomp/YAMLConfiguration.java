@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 public class YAMLConfiguration implements ConfigurationInterface{
-    private Map<String, String> sources;
+    public Map<String, String> sources;
     public ArrayList<Key> keys;
 
     @JsonAnyGetter
