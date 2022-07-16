@@ -40,8 +40,8 @@ import java.util.Map;
 /**
  * Implements XmlParser interface.
  * This implementation relies on the fact that each node in the source & target documents
- * has at least one attribute which can be used as a unique key in a hash map, allowing
- * O(n) performance when comparing both documents.
+ * has at least one attribute which can be used as a unique key in a hash map, making
+ * this implementation the best suitable choice for very large datasets
  *
  * Uses Java's DOM parser to load both documents into memory
  */
@@ -52,7 +52,7 @@ public class XmlUniqueParser implements XmlParser {
     /**
      * Instantiates a new XmlUniqueParser.
      *
-     * @param config the config
+     * @param config the app config
      */
     public XmlUniqueParser(ConfigurationInterface config) {
         this.config = config;
@@ -65,7 +65,7 @@ public class XmlUniqueParser implements XmlParser {
 
         sourceDocNodeHashes = loadNodes(sourceDocument);
         targetDocNodeHashes = loadNodes(targetDocument);
-        HashMap<String, Node> unmatchedNodes = findUnmatchedNodes();
+        HashMap<String, Node> unmatchedNodes = getAllUnmatchedNodes();
     }
 
     public XmlUniqueParser(String source, String target) {
@@ -77,7 +77,7 @@ public class XmlUniqueParser implements XmlParser {
 
         sourceDocNodeHashes = loadNodes(sourceDocument);
         targetDocNodeHashes = loadNodes(targetDocument);
-        HashMap<String, Node> unmatchedNodes = findUnmatchedNodes();
+        HashMap<String, Node> unmatchedNodes = getAllUnmatchedNodes();
     }
 
     /**
@@ -97,7 +97,7 @@ public class XmlUniqueParser implements XmlParser {
      *
      * @return the hash map of unmatched nodes
      */
-    public HashMap<String, Node> findUnmatchedNodes() {
+    public HashMap<String, Node> getAllUnmatchedNodes() {
         HashMap<String, Node> unmatchedNodes = new HashMap<>();
         for (Map.Entry<String, Node> entry : sourceDocNodeHashes.entrySet()) {
             Node targetEntry = targetDocNodeHashes.getOrDefault(entry.getKey(), null);

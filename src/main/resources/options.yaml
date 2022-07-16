@@ -1,7 +1,7 @@
 --- # init
 sources:
-  source: /cereal.csv
-  target: /internet_library.xml
+  source: /prov.csv
+  target: /prov_new.csv
   output: /output.txt
 
 keys:

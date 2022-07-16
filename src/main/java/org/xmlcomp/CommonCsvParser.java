@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.util.HashMap;
 
 public class CommonCsvParser implements Parser {
     private CommonCsvParser() {}
@@ -23,19 +24,55 @@ public class CommonCsvParser implements Parser {
     public CommonCsvParser(ConfigurationInterface config) {
         this.config = config;
 
+        long curr = System.currentTimeMillis();
         sourceDocStream = openResource(config.getProperty("source"));
         targetDocStream = openResource(config.getProperty("target"));
 
-        Iterable<CSVRecord> sourceRecords = getCsvRecordsIterable(sourceDocStream);
-        constructCsvEntryHashTable(sourceRecords);
+        sourceEntryHashMap = constructCsvEntryHashTable(getCsvRecordsIterable(sourceDocStream));
+        targetEntryHashMap = constructCsvEntryHashTable(getCsvRecordsIterable(targetDocStream));
+
+        HashMap<Integer, CSVRecord> unmatchedEntries =
+                listOfUnmatchedEntries(sourceEntryHashMap, targetEntryHashMap);
+        logUnmatchedEntries(unmatchedEntries);
+        long end = System.currentTimeMillis();
+        logger.warn("Took {} ms to diff 2 csv files", (end - curr));
     }
 
-    private void constructCsvEntryHashTable(Iterable<CSVRecord> records) {
+
+    private void logUnmatchedEntries(HashMap<Integer, CSVRecord> entries) {
+        entries.forEach((hash, entry) -> {
+            logger.warn("Unmatched Entry: {}", entry);
+        });
+    }
+
+    private HashMap<Integer, CSVRecord> listOfUnmatchedEntries(HashMap<Integer, CSVRecord> source,
+                                                               HashMap<Integer, CSVRecord> target) {
+        HashMap<Integer, CSVRecord> unmatchedEntries = new HashMap<>();
+
+        source.forEach(((hash, entry) -> {
+            if (!target.containsKey(hash)) {
+                unmatchedEntries.put(hash, entry);
+            }
+        }));
+
+        target.forEach((hash, entry) -> {
+            if (!source.containsKey(hash)) {
+                unmatchedEntries.put(hash, entry);
+            }
+        });
+
+        return unmatchedEntries;
+    }
+    private HashMap<Integer, CSVRecord> constructCsvEntryHashTable(Iterable<CSVRecord> records) {
+        HashMap<Integer, CSVRecord> hashes = new HashMap<>();
         for (CSVRecord record : records) {
             byte[] entryBytes = record.toString().getBytes();
             int digest =
                     org.apache.commons.codec.digest.MurmurHash3.hash32x86(entryBytes, 0, entryBytes.length, 0);
+            hashes.put(digest, record);
         }
+
+        return hashes;
     }
 
     private Iterable<CSVRecord> getCsvRecordsIterable(InputStream stream) {
@@ -56,4 +93,6 @@ public class CommonCsvParser implements Parser {
     private ConfigurationInterface config = null;
     private InputStream sourceDocStream;
     private InputStream targetDocStream;
+    private HashMap<Integer, CSVRecord> sourceEntryHashMap = new HashMap<>();
+    private HashMap<Integer, CSVRecord> targetEntryHashMap = new HashMap<>();
 }

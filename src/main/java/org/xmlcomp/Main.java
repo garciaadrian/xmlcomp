@@ -25,13 +25,13 @@ public class Main {
             return;
         }
 
-        logger.debug(config.getProperty("firstSource"));
+        logger.debug(config.getProperty("source"));
 
 
 
         //XmlParserFactory pf = new XmlParserFactory();
         //XmlParser xml = pf.createParser(config);
 
-        CommonCsvParser csvParser = new CommonCsvParser(config);
+        Parser csvParser = new CommonCsvParser(config);
     }
 }

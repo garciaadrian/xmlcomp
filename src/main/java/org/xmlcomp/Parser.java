@@ -25,7 +25,7 @@ public interface Parser {
     }
 
     default InputStream openResource(String resource) {
-        // #TODO(adrian): this func can fail be returning an empty stream
+        // #TODO(adrian): this func can fail by returning an empty stream
         return Main.class.getResourceAsStream(resource);
     }
 }
