@@ -1,11 +1,12 @@
 --- # init
 sources:
-  source: /local_library.xml
+  source: /cereal.csv
   target: /internet_library.xml
   output: /output.txt
 
 keys:
   -
-    element: true
+    element: song
     attributes:
-      - id: true
+      - title: true
+      - artist: true

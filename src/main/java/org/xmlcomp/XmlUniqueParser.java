@@ -57,8 +57,8 @@ public class XmlUniqueParser implements XmlParser {
     public XmlUniqueParser(ConfigurationInterface config) {
         this.config = config;
 
-        sourceDocStream = openResource(config.getProperty("firstSource"));
-        targetDocStream = openResource(config.getProperty("secondSource"));
+        sourceDocStream = openResource(config.getProperty("source"));
+        targetDocStream = openResource(config.getProperty("target"));
 
         sourceDocument = loadDocument(sourceDocStream);
         targetDocument = loadDocument(targetDocStream);

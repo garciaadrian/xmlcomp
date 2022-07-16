@@ -12,4 +12,6 @@ public interface XmlParser extends Parser {
     default void setupConfig() {
 
     }
+
+
 }

@@ -29,8 +29,9 @@ public class Main {
 
 
 
-        XmlParserFactory pf = new XmlParserFactory();
-        XmlParser xml = pf.createParser(config);
+        //XmlParserFactory pf = new XmlParserFactory();
+        //XmlParser xml = pf.createParser(config);
 
+        CommonCsvParser csvParser = new CommonCsvParser(config);
     }
 }
