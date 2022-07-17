@@ -23,21 +23,61 @@ public class CommonCsvParser implements Parser {
 
     public CommonCsvParser(ConfigurationInterface config) {
         this.config = config;
+    }
+
+    public void Diff() {
+        long currMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        try {
+            loadConfigResources();
+        } catch (NullPointerException e) {
+            logger.warn("Unable to load resources {}, or {}", config.getProperty("source"),
+                    config.getProperty("target"));
+            throw e;
+        }
 
         long curr = System.currentTimeMillis();
-        sourceDocStream = openResource(config.getProperty("source"));
-        targetDocStream = openResource(config.getProperty("target"));
 
-        sourceEntryHashMap = constructCsvEntryHashTable(getCsvRecordsIterable(sourceDocStream));
-        targetEntryHashMap = constructCsvEntryHashTable(getCsvRecordsIterable(targetDocStream));
+        HashMap<Integer, CSVRecord> sourceEntryHashMap =
+                constructCsvEntryHashTable(getCsvRecordsIterable(sourceDocStream));
+        HashMap<Integer, CSVRecord> targetEntryHashMap =
+                constructCsvEntryHashTable(getCsvRecordsIterable(targetDocStream));
 
         HashMap<Integer, CSVRecord> unmatchedEntries =
                 listOfUnmatchedEntries(sourceEntryHashMap, targetEntryHashMap);
+
         logUnmatchedEntries(unmatchedEntries);
+
+        int mb = 1024 * 1024;
+        long endMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         long end = System.currentTimeMillis();
-        logger.warn("Took {} ms to diff 2 csv files", (end - curr));
+        logger.warn("Took {} ms to diff {} entries",
+                (end - curr), sourceEntryHashMap.size() + targetEntryHashMap.size());
+        logger.warn("Used {} megabytes of memory", (endMem - currMem) / mb);
     }
 
+    private InputStream getResourceAsStream(String path) {
+        InputStream stream;
+
+        try {
+            stream = openResource(path);
+        } catch (NullPointerException e) {
+            logger.warn("File may not exist: {}", path);
+            throw e;
+        }
+
+        if (stream == null) {
+            throw new NullPointerException();
+        }
+        return stream;
+    }
+    public void loadConfigResources() {
+        try {
+            sourceDocStream = getResourceAsStream(config.getProperty("source"));
+            targetDocStream = getResourceAsStream(config.getProperty("target"));
+        } catch (NullPointerException e) {
+            throw e;
+        }
+    }
 
     private void logUnmatchedEntries(HashMap<Integer, CSVRecord> entries) {
         entries.forEach((hash, entry) -> {
@@ -48,7 +88,6 @@ public class CommonCsvParser implements Parser {
     private HashMap<Integer, CSVRecord> listOfUnmatchedEntries(HashMap<Integer, CSVRecord> source,
                                                                HashMap<Integer, CSVRecord> target) {
         HashMap<Integer, CSVRecord> unmatchedEntries = new HashMap<>();
-
         source.forEach(((hash, entry) -> {
             if (!target.containsKey(hash)) {
                 unmatchedEntries.put(hash, entry);
@@ -93,6 +132,4 @@ public class CommonCsvParser implements Parser {
     private ConfigurationInterface config = null;
     private InputStream sourceDocStream;
     private InputStream targetDocStream;
-    private HashMap<Integer, CSVRecord> sourceEntryHashMap = new HashMap<>();
-    private HashMap<Integer, CSVRecord> targetEntryHashMap = new HashMap<>();
 }

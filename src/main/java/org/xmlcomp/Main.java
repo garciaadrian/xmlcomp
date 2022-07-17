@@ -32,6 +32,12 @@ public class Main {
         //XmlParserFactory pf = new XmlParserFactory();
         //XmlParser xml = pf.createParser(config);
 
-        Parser csvParser = new CommonCsvParser(config);
+        CommonCsvParser csvParser = new CommonCsvParser(config);
+        try {
+            csvParser.Diff();
+        } catch (NullPointerException e) {
+            logger.fatal("Exiting program...");
+            return;
+        }
     }
 }
