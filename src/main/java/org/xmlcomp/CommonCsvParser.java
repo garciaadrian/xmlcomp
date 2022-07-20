@@ -23,8 +23,6 @@ import java.util.function.BiConsumer;
 public class CommonCsvParser implements Parser {
     private CommonCsvParser() {}
 
-    private static final Logger logger = LogManager.getLogger();
-
     public CommonCsvParser(ConfigurationInterface config) {
         this.config = config;
     }

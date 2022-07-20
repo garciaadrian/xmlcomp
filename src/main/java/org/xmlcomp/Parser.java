@@ -8,24 +8,40 @@
 
 package org.xmlcomp;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 public interface Parser {
+    Logger logger = LogManager.getLogger();
     default InputStream open(String filename) throws FileNotFoundException {
         InputStream file = null;
         try {
             file = new FileInputStream(filename);
         } catch (FileNotFoundException | SecurityException e) {
-            e.printStackTrace();
+            logger.warn("Exception thrown: {}", e.getMessage());
         }
         return file;
     }
 
-    default InputStream openResource(String resource) {
-        // #TODO(adrian): this func can fail by returning an empty stream
-        return Main.class.getResourceAsStream(resource);
+    /**
+     * Returns an InputStream of a resource.
+     * If the resource is not found, throws a NullPointerException.
+     *
+     * @param resourceName The name of the resource to open.
+     * @throws NullPointerException if resource does not exist.
+     * @return An InputStream of the resource.
+     */
+    default InputStream openResource(String resourceName) {
+        InputStream resource = Main.class.getResourceAsStream(resourceName);
+        if (resource == null) {
+            throw new NullPointerException();
+        }
+
+        return resource;
     }
 }
