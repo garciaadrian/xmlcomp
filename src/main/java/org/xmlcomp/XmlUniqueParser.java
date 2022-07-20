@@ -179,7 +179,7 @@ public class XmlUniqueParser implements XmlParser {
     }
 
     /**
-     * Returns the xml representation of a node.
+     * Returns a node as an xml tag
      *
      * @param node the node
      * @return xml
@@ -196,9 +196,10 @@ public class XmlUniqueParser implements XmlParser {
                 nd.getParentNode().removeChild(nd);
             }
 
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            Transformer transformer = TransformerFactory.newDefaultInstance().newTransformer();
 
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, "no");
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
