@@ -11,6 +11,7 @@ package org.xmlcomp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,7 +46,15 @@ class ParserTest {
 
     @Test
     void open() {
-        InputStream stream = parser.open("/etc/passwd");
-        assertNotNull(stream);
+        InputStream stream = null;
+        try {
+            stream = parser.open("/etc/passwd");
+        } catch (FileNotFoundException e) {
+
+        } finally {
+            assertNotNull(stream);
+        }
+
+
     }
 }
