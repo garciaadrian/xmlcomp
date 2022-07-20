@@ -8,6 +8,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class Main {
     private static final Logger logger = LogManager.getLogger();
@@ -34,7 +37,8 @@ public class Main {
 
         CommonCsvParser csvParser = new CommonCsvParser(config);
         try {
-            csvParser.Diff();
+            List<String> diff = csvParser.listDifferences();
+            diff.forEach(logger::warn);
         } catch (NullPointerException e) {
             logger.fatal("Exiting program...");
             return;

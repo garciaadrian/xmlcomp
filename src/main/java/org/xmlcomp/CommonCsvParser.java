@@ -14,7 +14,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.function.BiConsumer;
 
 public class CommonCsvParser implements Parser {
     private CommonCsvParser() {}
@@ -25,57 +29,75 @@ public class CommonCsvParser implements Parser {
         this.config = config;
     }
 
-    public void Diff() {
-        long currMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+    public CommonCsvParser(String source, String target) {
         try {
-            loadConfigResources();
+            sourceDocStream = new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8));
+            targetDocStream = new ByteArrayInputStream(target.getBytes(StandardCharsets.UTF_8));
         } catch (NullPointerException e) {
-            logger.warn("Unable to load resources {}, or {}", config.getProperty("source"),
-                    config.getProperty("target"));
+            logger.warn(e.getMessage());
             throw e;
         }
 
-        long curr = System.currentTimeMillis();
+    }
+
+    private List<String> listTargetMissingEntries(HashMap<Integer, CSVRecord> sourceEntry,
+                                                  HashMap<Integer, CSVRecord> targetEntry) {
+        List<String> missingEntries = new ArrayList<>();
+
+        sourceEntry.forEach((hash, entry) -> {
+            if (!targetEntry.containsKey(hash)) {
+                missingEntries.add(entry.toString());
+            }
+        });
+
+        return missingEntries;
+    }
+
+    private List<String> listSourceMissingEntries(HashMap<Integer, CSVRecord> sourceEntry,
+                                                  HashMap<Integer, CSVRecord> targetEntry) {
+        List<String> missingEntries = new ArrayList<>();
+
+        targetEntry.forEach((hash, entry) -> {
+            if (!sourceEntry.containsKey(hash)) {
+                missingEntries.add(entry.toString());
+            }
+        });
+
+        return missingEntries;
+    }
+
+    public List<String> listDifferences() {
+        loadConfigResources();
 
         HashMap<Integer, CSVRecord> sourceEntryHashMap =
-                constructCsvEntryHashTable(getCsvRecordsIterable(sourceDocStream));
+                getCsvEntriesHashTable(getCsvEntriesIterable(sourceDocStream));
         HashMap<Integer, CSVRecord> targetEntryHashMap =
-                constructCsvEntryHashTable(getCsvRecordsIterable(targetDocStream));
+                getCsvEntriesHashTable(getCsvEntriesIterable(targetDocStream));
 
-        HashMap<Integer, CSVRecord> unmatchedEntries =
-                listOfUnmatchedEntries(sourceEntryHashMap, targetEntryHashMap);
+        List<String> sourceMissingEntries = listSourceMissingEntries(sourceEntryHashMap, targetEntryHashMap);
+        List<String> targetMissingEntries = listTargetMissingEntries(sourceEntryHashMap, targetEntryHashMap);
 
-        logUnmatchedEntries(unmatchedEntries);
 
-        int mb = 1024 * 1024;
-        long endMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        long end = System.currentTimeMillis();
-        logger.warn("Took {} ms to diff {} entries",
-                (end - curr), sourceEntryHashMap.size() + targetEntryHashMap.size());
-        logger.warn("Used {} megabytes of memory", (endMem - currMem) / mb);
+        List<String> differences = new ArrayList<>();
+        differences.addAll(sourceMissingEntries);
+        differences.addAll(targetMissingEntries);
+
+        return differences;
     }
 
     private InputStream getResourceAsStream(String path) {
-        InputStream stream;
-
-        try {
-            stream = openResource(path);
-        } catch (NullPointerException e) {
-            logger.warn("File may not exist: {}", path);
-            throw e;
-        }
+        InputStream stream = openResource(path);
 
         if (stream == null) {
+            logger.warn("File may not exist: {}", path);
             throw new NullPointerException();
         }
         return stream;
     }
-    public void loadConfigResources() {
-        try {
+    private void loadConfigResources() {
+        if (config != null) {
             sourceDocStream = getResourceAsStream(config.getProperty("source"));
             targetDocStream = getResourceAsStream(config.getProperty("target"));
-        } catch (NullPointerException e) {
-            throw e;
         }
     }
 
@@ -85,41 +107,40 @@ public class CommonCsvParser implements Parser {
         });
     }
 
-    private HashMap<Integer, CSVRecord> listOfUnmatchedEntries(HashMap<Integer, CSVRecord> source,
-                                                               HashMap<Integer, CSVRecord> target) {
+    private HashMap<Integer, CSVRecord> listOfUnmatchedEntries(HashMap<Integer, CSVRecord> sourceEntries,
+                                                               HashMap<Integer, CSVRecord> targetEntries) {
         HashMap<Integer, CSVRecord> unmatchedEntries = new HashMap<>();
-        source.forEach(((hash, entry) -> {
-            if (!target.containsKey(hash)) {
-                unmatchedEntries.put(hash, entry);
-            }
-        }));
 
-        target.forEach((hash, entry) -> {
-            if (!source.containsKey(hash)) {
-                unmatchedEntries.put(hash, entry);
-            }
-        });
+        BiConsumer<Integer, CSVRecord> getUnmatchedEntries = (hash, entry) -> {
+          if (!(targetEntries.containsKey(hash) && sourceEntries.containsKey(hash))) {
+              unmatchedEntries.put(hash, entry);
+          }
+        };
+
+        sourceEntries.forEach(getUnmatchedEntries);
+        targetEntries.forEach(getUnmatchedEntries);
 
         return unmatchedEntries;
     }
-    private HashMap<Integer, CSVRecord> constructCsvEntryHashTable(Iterable<CSVRecord> records) {
+    private HashMap<Integer, CSVRecord> getCsvEntriesHashTable(Iterable<CSVRecord> records) {
         HashMap<Integer, CSVRecord> hashes = new HashMap<>();
-        for (CSVRecord record : records) {
-            byte[] entryBytes = record.toString().getBytes();
+        for (CSVRecord entry : records) {
+            byte[] entryBytes = entry.toString().getBytes();
             int digest =
-                    org.apache.commons.codec.digest.MurmurHash3.hash32x86(entryBytes, 0, entryBytes.length, 0);
-            hashes.put(digest, record);
+                    org.apache.commons.codec.digest.MurmurHash3
+                            .hash32x86(entryBytes, 0, entryBytes.length, 0);
+            hashes.put(digest, entry);
         }
 
         return hashes;
     }
 
-    private Iterable<CSVRecord> getCsvRecordsIterable(InputStream stream) {
+    private Iterable<CSVRecord> getCsvEntriesIterable(InputStream stream) {
         Reader sourceReader = new BufferedReader(new InputStreamReader(stream));
         Iterable<CSVRecord> records = null;
         try {
 
-            CSVFormat builder = CSVFormat.Builder.create().setDelimiter(';').build();
+            CSVFormat builder = CSVFormat.Builder.create().build();
             records = builder.parse(sourceReader);
         } catch (IOException e) {
             logger.fatal("Unable to parse CSV file {}", e.getMessage());
@@ -130,6 +151,6 @@ public class CommonCsvParser implements Parser {
     }
 
     private ConfigurationInterface config = null;
-    private InputStream sourceDocStream;
-    private InputStream targetDocStream;
+    private InputStream sourceDocStream = null;
+    private InputStream targetDocStream = null;
 }
