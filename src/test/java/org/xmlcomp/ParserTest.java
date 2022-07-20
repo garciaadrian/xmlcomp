@@ -45,16 +45,14 @@ class ParserTest {
     }
 
     @Test
-    void open() {
+    void openNull() {
         InputStream stream = null;
         try {
-            stream = parser.open("/etc/passwd");
+            stream = parser.open("/etc/passwd/123fakefile/fakefake/123/etc/1");
         } catch (FileNotFoundException e) {
 
         } finally {
-            assertNotNull(stream);
+            assertNull(stream);
         }
-
-
     }
 }
