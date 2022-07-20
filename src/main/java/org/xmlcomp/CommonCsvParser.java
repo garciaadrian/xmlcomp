@@ -80,13 +80,7 @@ public class CommonCsvParser implements Parser {
     }
 
     private InputStream getResourceAsStream(String path) {
-        InputStream stream = openResource(path);
-
-        if (stream == null) {
-            logger.warn("File may not exist: {}", path);
-            throw new NullPointerException();
-        }
-        return stream;
+        return openResource(path);
     }
     private void loadConfigResources() {
         if (config != null) {
