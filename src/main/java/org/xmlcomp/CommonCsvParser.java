@@ -40,21 +40,18 @@ public class CommonCsvParser implements Parser {
 
     }
 
-    private List<String> listTargetMissingEntries(HashMap<Integer, CSVRecord> sourceEntry,
-                                                  HashMap<Integer, CSVRecord> targetEntry) {
-        List<String> missingEntries = new ArrayList<>();
-
-        sourceEntry.forEach((hash, entry) -> {
-            if (!targetEntry.containsKey(hash)) {
-                missingEntries.add(entry.toString());
-            }
-        });
-
-        return missingEntries;
-    }
-
-    private List<String> listSourceMissingEntries(HashMap<Integer, CSVRecord> sourceEntry,
-                                                  HashMap<Integer, CSVRecord> targetEntry) {
+    /**
+     * > It takes two hashmaps source and entry which are hashmaps of a CSVRecord entry and its hash,
+     * and returns a list of CSVRecord's as a string, that are missing from the source hashmap.
+     * In order to find entries that are mutually exclusive from two hashmaps, call this function
+     * twice swapping the order of arguments.
+     *
+     * @param sourceEntry The source entry that we're comparing against.
+     * @param targetEntry The target entry that we're comparing against.
+     * @return A list of missing entries from the source hashmap.
+     */
+    private List<String> listMissingEntries(HashMap<Integer, CSVRecord> sourceEntry,
+                                            HashMap<Integer, CSVRecord> targetEntry) {
         List<String> missingEntries = new ArrayList<>();
 
         targetEntry.forEach((hash, entry) -> {
@@ -65,7 +62,6 @@ public class CommonCsvParser implements Parser {
 
         return missingEntries;
     }
-
     public List<String> listDifferences() {
         loadConfigResources();
 
@@ -74,8 +70,8 @@ public class CommonCsvParser implements Parser {
         HashMap<Integer, CSVRecord> targetEntryHashMap =
                 getCsvEntriesHashTable(getCsvEntriesIterable(targetDocStream));
 
-        List<String> sourceMissingEntries = listSourceMissingEntries(sourceEntryHashMap, targetEntryHashMap);
-        List<String> targetMissingEntries = listTargetMissingEntries(sourceEntryHashMap, targetEntryHashMap);
+        List<String> sourceMissingEntries = listMissingEntries(sourceEntryHashMap, targetEntryHashMap);
+        List<String> targetMissingEntries = listMissingEntries(targetEntryHashMap, sourceEntryHashMap);
 
 
         List<String> differences = new ArrayList<>();

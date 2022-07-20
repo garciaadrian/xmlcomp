@@ -30,11 +30,6 @@ public class Main {
 
         logger.debug(config.getProperty("source"));
 
-
-
-        //XmlParserFactory pf = new XmlParserFactory();
-        //XmlParser xml = pf.createParser(config);
-
         CommonCsvParser csvParser = new CommonCsvParser(config);
         try {
             List<String> diff = csvParser.listDifferences();
