@@ -43,4 +43,24 @@ class CommonCsvParserTest {
         List<String> differences = parser.listDifferences();
         assertEquals(2, differences.size());
     }
+
+    @Test
+     void loadConfigResources() {
+        URL configFileUrl = getClass().getClassLoader().getResource("options.yaml");
+
+        assertDoesNotThrow(() -> {
+            YAMLConfiguration.getConfig(configFileUrl);
+        });
+
+        YAMLConfiguration config = null;
+        try {
+             config = YAMLConfiguration.getConfig(configFileUrl);
+        } catch (IOException e) {
+
+        } finally {
+            parser = new CommonCsvParser(config);
+            List<String> differences = parser.listDifferences();
+            assertEquals(0, differences.size());
+        }
+    }
 }

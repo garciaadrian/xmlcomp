@@ -11,8 +11,10 @@ package org.xmlcomp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URL;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,9 +35,11 @@ class ParserTest {
 
     @Test
     void openResourceNull() {
+        ClassLoader loader = getClass().getClassLoader();
+        URL file = loader.getResource("test.csv");
         InputStream stream = null;
         try {
-            stream = parser.openResource("options.yaml");
+            stream = parser.openResource("test.csv");
         } catch (NullPointerException e) {
 
         } finally {

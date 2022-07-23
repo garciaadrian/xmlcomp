@@ -1,0 +1,12 @@
+--- # init
+sources:
+  source: /test.csv
+  target: /test.csv
+  output: /output.txt
+
+keys:
+  -
+    element: song
+    attributes:
+      - title: true
+      - artist: true

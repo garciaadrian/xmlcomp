@@ -10,15 +10,11 @@ package org.xmlcomp;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.BiConsumer;
 
 public class CommonCsvParser implements Parser {
     private CommonCsvParser() {}
@@ -61,7 +57,8 @@ public class CommonCsvParser implements Parser {
         return missingEntries;
     }
     public List<String> listDifferences() {
-        loadConfigResources();
+        if (config != null)
+            loadConfigResources();
 
         HashMap<Integer, CSVRecord> sourceEntryHashMap =
                 getCsvEntriesHashTable(getCsvEntriesIterable(sourceDocStream));
@@ -79,37 +76,28 @@ public class CommonCsvParser implements Parser {
         return differences;
     }
 
-    private InputStream getResourceAsStream(String path) {
-        return openResource(path);
-    }
+    /**
+     * If the config object is not null, then opens the source and target documents.
+     * @throws NullPointerException if resources do not exist
+     */
     private void loadConfigResources() {
         if (config != null) {
-            sourceDocStream = getResourceAsStream(config.getProperty("source"));
-            targetDocStream = getResourceAsStream(config.getProperty("target"));
+            sourceDocStream = openResource(config.getProperty("source"));
+            targetDocStream = openResource(config.getProperty("target"));
         }
     }
 
-    private void logUnmatchedEntries(HashMap<Integer, CSVRecord> entries) {
-        entries.forEach((hash, entry) -> {
-            logger.warn("Unmatched Entry: {}", entry);
-        });
-    }
-
-    private HashMap<Integer, CSVRecord> listOfUnmatchedEntries(HashMap<Integer, CSVRecord> sourceEntries,
-                                                               HashMap<Integer, CSVRecord> targetEntries) {
-        HashMap<Integer, CSVRecord> unmatchedEntries = new HashMap<>();
-
-        BiConsumer<Integer, CSVRecord> getUnmatchedEntries = (hash, entry) -> {
-          if (!(targetEntries.containsKey(hash) && sourceEntries.containsKey(hash))) {
-              unmatchedEntries.put(hash, entry);
-          }
-        };
-
-        sourceEntries.forEach(getUnmatchedEntries);
-        targetEntries.forEach(getUnmatchedEntries);
-
-        return unmatchedEntries;
-    }
+    /**
+     * Takes an iterable of CSVRecord entries and then creates a hash map, hashing the value
+     * of the csv entry (the value of a csv entry is the entire row as a string), which
+     * maps to the CSVRecord object.
+     *
+     * The hash value of the csv entry can then be used to identify unique csv records in
+     * a document.
+     *
+     * @param records the CSV records to be hashed
+     * @return A HashMap of CSVRecords.
+     */
     private HashMap<Integer, CSVRecord> getCsvEntriesHashTable(Iterable<CSVRecord> records) {
         HashMap<Integer, CSVRecord> hashes = new HashMap<>();
         for (CSVRecord entry : records) {
@@ -123,6 +111,12 @@ public class CommonCsvParser implements Parser {
         return hashes;
     }
 
+    /**
+     * > This function takes an input stream and returns an iterable of CSV entries/records
+     *
+     * @param stream The input stream of the CSV file
+     * @return An Iterable of CSVRecord objects.
+     */
     private Iterable<CSVRecord> getCsvEntriesIterable(InputStream stream) {
         Reader sourceReader = new BufferedReader(new InputStreamReader(stream));
         Iterable<CSVRecord> records = null;

@@ -1,7 +1,7 @@
 --- # init
 sources:
-  source: /output_csv_full.csv
-  target: /output_csv_full_new.csv
+  source: /addressefsdjkfhds.csv
+  target: /addresses_new.csv
   output: /output.txt
 
 keys:
